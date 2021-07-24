@@ -1,0 +1,16 @@
+CC  = gcc.exe
+BIN = steam-webgame-launcher.exe
+RM  = rm.exe -f
+
+.PHONY: all
+
+all: $(BIN)
+
+clean:
+	${RM} *.o $(BIN)
+
+$(BIN): main.o
+	$(CC) -o $@ $^
+
+%.o: %.c
+	$(CC) -c -o $@ $<
