@@ -2,6 +2,8 @@ CC  = gcc.exe
 BIN = steam-webgame-launcher.exe
 RM  = rm.exe -f
 
+CFLAGS = -Ilz4/lib
+
 .PHONY: all
 
 all: $(BIN)
@@ -10,7 +12,8 @@ clean:
 	${RM} *.o $(BIN)
 
 $(BIN): main.o
+$(BIN): lz4/lib/lz4.o lz4/lib/lz4hc.o lz4/lib/lz4frame.o lz4/lib/xxhash.o
 	$(CC) -o $@ $^
 
 %.o: %.c
-	$(CC) -c -o $@ $<
+	$(CC) -c -o $@ $< $(CFLAGS)
