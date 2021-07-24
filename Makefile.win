@@ -2,7 +2,7 @@ CC  = gcc.exe
 BIN = steam-webgame-launcher.exe
 RM  = rm.exe -f
 
-CFLAGS = -Ilz4/lib
+CFLAGS = -Ilz4/lib -IcJSON -std=c11 -O3
 
 .PHONY: all
 
@@ -13,6 +13,7 @@ clean:
 
 $(BIN): main.o
 $(BIN): lz4/lib/lz4.o lz4/lib/lz4hc.o lz4/lib/lz4frame.o lz4/lib/xxhash.o
+$(BIN): cJSON/cJSON.o
 	$(CC) -o $@ $^
 
 %.o: %.c
