@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 {
 	int code = EXIT_FAILURE;
 	
-	FLUSHPUTS("steam-webgame-launcher v0.1.1.1");
+	FLUSHPUTS("steam-webgame-launcher v0.1.1.1-git");
 	
 	// Check we got exactly 3 arguments---
 	// argv[1]: the URL of the webgame.
