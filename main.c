@@ -25,6 +25,10 @@
 #define CLOSED_DELAY  5000
 #define MAX_INTERVAL  60000
 
+// Number of times and interval between attempts when trying to read file.
+#define MAX_READ_ATTEMPTS 10
+#define READ_INTERVAL     50
+
 // Reads sessionstore file (as compressed) and returns a buffer containing its
 // contents. The caller is responsible for free-ing the buffer. Since the
 // buffer is not a null-terminated string the size read is output into the
@@ -91,8 +95,15 @@ int main(int argc, char **argv)
 
 char *read_sessionstore(char *path, int *size)
 {
-	// Compute filename to read.
-	FILE *file = fopen(path, "rb");
+	// Read file. If it fails, try again MAX_READ_ATTEMPTS times at
+	// READ_INTERVAL milliseconds intervals. We do this because sometimes
+	// Firefox is currently writing to the file and seems to disallow opening
+	// to read.
+	FILE *file = NULL;
+	for (int i = 0; !file && i < MAX_READ_ATTEMPTS; i++) {
+		Sleep(READ_INTERVAL);
+		file = fopen(path, "rb");
+	}
 	if (!file) return NULL;
 	
 	// Check length of file and allocate an appropriately-sized buffer.
@@ -120,6 +131,7 @@ bool check_tab_open(char *url, char *path)
 	char *file_buf = read_sessionstore(path, &file_size);
 	if (!file_buf) {
 		fputs("Could not read session store\n", stderr);
+		fprintf(stderr, "Errno: %d\n", GetLastError());
 		goto err_file_buf;
 	}
 
