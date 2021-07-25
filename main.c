@@ -14,6 +14,8 @@
 #include <synchapi.h>
 #include <windows.h>
 
+#define FLUSHPUTS(s) puts(s); fflush(stdout);
+
 // Waiting behaviour.
 // First wait INITIAL_DELAY milliseconds, then waits for file changes. If the
 // URL is absent once, check again after CLOSED_DELAY milliseconds before
@@ -37,6 +39,8 @@ int main(int argc, char **argv)
 {
 	int code = EXIT_FAILURE;
 	
+	FLUSHPUTS("steam-webgame-launcher v0.1.0.0-git");
+	
 	// Check we got exactly 3 arguments---
 	// argv[1]: the URL of the webgame.
 	// argv[2]: path to Firefox
@@ -50,6 +54,7 @@ int main(int argc, char **argv)
 	char *path = argv[3];
 	
 	// Open Firefox to the URL.
+	FLUSHPUTS("Opening Firefox");
 	char *command = malloc(strlen(url) + strlen(firefox) + 4);
 	sprintf(command, "\"%s\" %s", firefox, url);
 	system(command);
@@ -64,12 +69,17 @@ int main(int argc, char **argv)
 	while (*cp != '\\' && *cp != '/') cp--; *cp = '\0';
 
 	// Wait until the URL is no longer present. See comments above on *_DELAY.
+	FLUSHPUTS("Waiting for initial delay");
 	Sleep(INITIAL_DELAY);
 	while (true) {
+		FLUSHPUTS("Checking for url");
 		if (!check_tab_open(url, path)) { // Check a second time.
+			FLUSHPUTS("Waiting for closed delay");
 			Sleep(CLOSED_DELAY);
+			FLUSHPUTS("Checking for url after closed delay");
 			if (!check_tab_open(url, path)) break;
 		}
+		FLUSHPUTS("Waiting for file change");
 		WaitForSingleObject(
 				FindFirstChangeNotificationA(path_dir, FALSE,
 					FILE_NOTIFY_CHANGE_LAST_WRITE),
@@ -161,8 +171,11 @@ bool check_tab_open(char *url, char *path)
 						cJSON_GetObjectItemCaseSensitive(entry, "url"));
 
 				// Found!
-				if (tab_url && strncmp(tab_url, url, strlen(url)) == 0)
-					url_found = true;
+				if (tab_url) {
+					FLUSHPUTS(tab_url);
+					if (strncmp(tab_url, url, strlen(url)) == 0)
+						url_found = true;
+				}
 			}
 		}
 	}
