@@ -9,9 +9,19 @@
 
 #include <cJSON.h>
 #include <lz4.h>
+
+#include <fileapi.h>
+#include <synchapi.h>
 #include <windows.h>
 
-#define LOOP_INTERVAL 5000 // Check every 5 seconds.
+// Waiting behaviour.
+// First wait INITIAL_DELAY milliseconds, then waits for file changes. If the
+// URL is absent once, check again after CLOSED_DELAY milliseconds before
+// terminating. MAX_INTERVAL is the time to check again anyway even if file
+// changes not seen.
+#define INITIAL_DELAY 10000
+#define CLOSED_DELAY  5000
+#define MAX_INTERVAL  60000
 
 // Reads sessionstore file (as compressed) and returns a buffer containing its
 // contents. The caller is responsible for free-ing the buffer. Since the
@@ -44,10 +54,27 @@ int main(int argc, char **argv)
 	sprintf(command, "\"%s\" %s", firefox, url);
 	system(command);
 	free(command);
+	
+	// First we get the directory name of path to sessionstore file by null-
+	// terminating at the last \ or /, for use with
+	// FindFirstChangeNotificationA later on.
+	char *path_dir = malloc(strlen(path));
+	strcpy(path_dir, path);
+	char *cp = &path_dir[strlen(path_dir)];
+	while (*cp != '\\' && *cp != '/') cp--; *cp = '\0';
 
-	// Loop until the URL is no longer open. We check every LOOP_INTERVAL
-	// milliseconds.
-	do Sleep(LOOP_INTERVAL); while (check_tab_open(url, path));
+	// Wait until the URL is no longer present. See comments above on *_DELAY.
+	Sleep(INITIAL_DELAY);
+	while (true) {
+		if (!check_tab_open(url, path)) { // Check a second time.
+			Sleep(CLOSED_DELAY);
+			if (!check_tab_open(url, path)) break;
+		}
+		WaitForSingleObject(
+				FindFirstChangeNotificationA(path_dir, FALSE,
+					FILE_NOTIFY_CHANGE_LAST_WRITE),
+				MAX_INTERVAL);
+	};
 
 	exit(EXIT_SUCCESS);
 }
