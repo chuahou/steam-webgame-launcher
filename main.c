@@ -9,9 +9,21 @@
 
 #include <cJSON.h>
 #include <lz4.h>
+
+#include <fileapi.h>
+#include <synchapi.h>
 #include <windows.h>
 
-#define LOOP_INTERVAL 5000 // Check every 5 seconds.
+#define FLUSHPUTS(s) puts(s); fflush(stdout);
+
+// Waiting behaviour.
+// First wait INITIAL_DELAY milliseconds, then waits for file changes. If the
+// URL is absent once, check again after CLOSED_DELAY milliseconds before
+// terminating. MAX_INTERVAL is the time to check again anyway even if file
+// changes not seen.
+#define INITIAL_DELAY 10000
+#define CLOSED_DELAY  5000
+#define MAX_INTERVAL  60000
 
 // Reads sessionstore file (as compressed) and returns a buffer containing its
 // contents. The caller is responsible for free-ing the buffer. Since the
@@ -27,6 +39,8 @@ int main(int argc, char **argv)
 {
 	int code = EXIT_FAILURE;
 	
+	FLUSHPUTS("steam-webgame-launcher v0.1.0.0-git");
+	
 	// Check we got exactly 3 arguments---
 	// argv[1]: the URL of the webgame.
 	// argv[2]: path to Firefox
@@ -40,14 +54,37 @@ int main(int argc, char **argv)
 	char *path = argv[3];
 	
 	// Open Firefox to the URL.
+	FLUSHPUTS("Opening Firefox");
 	char *command = malloc(strlen(url) + strlen(firefox) + 4);
 	sprintf(command, "\"%s\" %s", firefox, url);
 	system(command);
 	free(command);
+	
+	// First we get the directory name of path to sessionstore file by null-
+	// terminating at the last \ or /, for use with
+	// FindFirstChangeNotificationA later on.
+	char *path_dir = malloc(strlen(path));
+	strcpy(path_dir, path);
+	char *cp = &path_dir[strlen(path_dir)];
+	while (*cp != '\\' && *cp != '/') cp--; *cp = '\0';
 
-	// Loop until the URL is no longer open. We check every LOOP_INTERVAL
-	// milliseconds.
-	do Sleep(LOOP_INTERVAL); while (check_tab_open(url, path));
+	// Wait until the URL is no longer present. See comments above on *_DELAY.
+	FLUSHPUTS("Waiting for initial delay");
+	Sleep(INITIAL_DELAY);
+	while (true) {
+		FLUSHPUTS("Checking for url");
+		if (!check_tab_open(url, path)) { // Check a second time.
+			FLUSHPUTS("Waiting for closed delay");
+			Sleep(CLOSED_DELAY);
+			FLUSHPUTS("Checking for url after closed delay");
+			if (!check_tab_open(url, path)) break;
+		}
+		FLUSHPUTS("Waiting for file change");
+		WaitForSingleObject(
+				FindFirstChangeNotificationA(path_dir, FALSE,
+					FILE_NOTIFY_CHANGE_LAST_WRITE),
+				MAX_INTERVAL);
+	};
 
 	exit(EXIT_SUCCESS);
 }
@@ -134,8 +171,11 @@ bool check_tab_open(char *url, char *path)
 						cJSON_GetObjectItemCaseSensitive(entry, "url"));
 
 				// Found!
-				if (tab_url && strncmp(tab_url, url, strlen(url)) == 0)
-					url_found = true;
+				if (tab_url) {
+					FLUSHPUTS(tab_url);
+					if (strncmp(tab_url, url, strlen(url)) == 0)
+						url_found = true;
+				}
 			}
 		}
 	}
