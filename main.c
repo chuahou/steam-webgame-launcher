@@ -22,7 +22,7 @@
 // terminating. MAX_INTERVAL is the time to check again anyway even if file
 // changes not seen.
 #define INITIAL_DELAY 10000
-#define CLOSED_DELAY  5000
+#define CLOSED_DELAY  30000
 #define MAX_INTERVAL  60000
 
 // Number of times and interval between attempts when trying to read file.
