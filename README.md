@@ -1,7 +1,8 @@
 # steam-webgame-launcher
 
 *Launches a web game in Firefox and stays alive until no tabs with the specified
-URL exist, allowing better Steam status behaviour when added as a non-Steam game.*
+URL exist, allowing better Steam status behaviour when added as a non-Steam
+game.*
 
 ## Usage
 
@@ -11,8 +12,8 @@ URL exist, allowing better Steam status behaviour when added as a non-Steam game
    `C:\Users\[username]\AppData\Roaming\Mozilla\Firefox\Profiles\[profile].default-release\sessionstore-backups\recovery.jsonlz4`
 1. In Steam, click on `Games -> Add a Non-Steam Game to my Library...`.
 1. Choose steam-webgame-launcher.exe.
-1. Open the `Properties` of `steam-webgame-launcher` in Steam. Change the name/icon
-   as desired, and set the Launch Options as follows:
+1. Open the `Properties` of `steam-webgame-launcher` in Steam. Change the
+   name/icon as desired, and set the Launch Options as follows:
 
    ```
    [URL] "[path to firefox.exe]" "[path to recovery.jsonlz4]"
