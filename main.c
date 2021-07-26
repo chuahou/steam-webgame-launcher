@@ -42,9 +42,9 @@ bool check_tab_open(char *, char *);
 int main(int argc, char **argv)
 {
 	int code = EXIT_FAILURE;
-	
+
 	FLUSHPUTS("steam-webgame-launcher v0.1.1.1-git");
-	
+
 	// Check we got exactly 3 arguments---
 	// argv[1]: the URL of the webgame.
 	// argv[2]: path to Firefox
@@ -56,14 +56,14 @@ int main(int argc, char **argv)
 	char *url = argv[1];
 	char *firefox = argv[2];
 	char *path = argv[3];
-	
+
 	// Open Firefox to the URL.
 	FLUSHPUTS("Opening Firefox");
 	char *command = malloc(strlen(url) + strlen(firefox) + 4);
 	sprintf(command, "\"%s\" %s", firefox, url);
 	system(command);
 	free(command);
-	
+
 	// First we get the directory name of path to sessionstore file by null-
 	// terminating at the last \ or /, for use with
 	// FindFirstChangeNotificationA later on.
@@ -105,13 +105,13 @@ char *read_sessionstore(char *path, int *size)
 		file = fopen(path, "rb");
 	}
 	if (!file) return NULL;
-	
+
 	// Check length of file and allocate an appropriately-sized buffer.
 	fseek(file, 0L, SEEK_END);
 	*size = ftell(file);
 	fseek(file, 0L, SEEK_SET);
 	char *file_buf = malloc(*size);
-	
+
 	// Read and update file size.
 	*size = fread((void *) file_buf, 1, *size, file);
 
@@ -191,7 +191,7 @@ bool check_tab_open(char *url, char *path)
 			}
 		}
 	}
-	
+
 	succeeded = true;
 
 	cJSON_Delete(json);
